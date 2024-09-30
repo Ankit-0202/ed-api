@@ -1,19 +1,27 @@
-import requests
 import csv
-from datetime import datetime, timezone
-import time
+import os
 import sys
+import time
+from datetime import datetime, timezone
 
-from auth import AUTH_HEADER
+import requests
+from dotenv import load_dotenv
 
-# token: wgu8M2.XC8wILo1julTYkDXLkxZd8qzthxpMKDYy97hLW0F
-
+# Load environment variables from .env file
+load_dotenv()
+# Get API token
 # https://edstem.org/au/settings/api-tokens
+
+AUTH_HEADER = {
+    "Authorization": f"Bearer {os.getenv('AUTH_TOKEN')}",
+    "Content-Type": "application/json",
+}
+
 
 # ED challange id used in api, slide id use in the url for the website
 
 # q1
-API_ID = 134119
+API_ID = 134120
 SLIDE_ID = 414786
 
 # # q2
@@ -30,7 +38,6 @@ SLIDE_ID = 414786
 
 
 STUDENTS_FILE = "students.txt"
-# tab seperated list, copied straight from excel. 
 # example data:
 """
 
@@ -45,11 +52,13 @@ MOHAMMED	ALHUSSAIN	-	MALH0057@UNI.SYDNEY.EDU.AU
 
 # Ed apt endpoints
 USERS_API_URL = f"https://edstem.org/api/challenges/{API_ID}/users"
-SUBMISSIONS_API_URL_TEMPLATE = f"https://edstem.org/api/users/{{student_id}}/challenges/{API_ID}/submissions"
-SUBMISSION_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/59353/slides/{SLIDE_ID}/submissions?u={{student_id}}&s={{submission_id}}"
+SUBMISSIONS_API_URL_TEMPLATE = (
+    f"https://edstem.org/api/users/{{student_id}}/challenges/{API_ID}/submissions"
+)
+SUBMISSION_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/61238/slides/{SLIDE_ID}/submissions?u={{student_id}}&s={{submission_id}}"
 
 # for student with staff email
-MISSING_EMAIL_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/59353/slides/{SLIDE_ID}/submissions?q={{query}}"
+MISSING_EMAIL_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/61238/slides/{SLIDE_ID}/submissions?q={{query}}"
 
 
 def read_student_data(file_path):
@@ -86,7 +95,10 @@ def fetch_users():
     if response.status_code == 200:
         return response.json().get("users", [])
     else:
-        print(f"Failed to fetch users. Status code: {response.status_code}", file=sys.stderr)
+        print(
+            f"Failed to fetch users. Status code: {response.status_code}",
+            file=sys.stderr,
+        )
         return []
 
 
@@ -102,7 +114,7 @@ def fetch_submissions(student_id):
         print(
             f"Failed to fetch submissions for student ID {student_id}. "
             f"Status code: {response.status_code}",
-            file=sys.stderr
+            file=sys.stderr,
         )
         return []
 
@@ -115,35 +127,11 @@ def parse_iso_datetime(iso_string):
 
 
 def find_accepted_submission(submissions):
-    """
 
-    Find the submission based on the following:
-    1. Count the number of submissions after 26/08 8am.
-       If there are more than 10, the script will select the overall latest.
+    after_cutoff_submissions = [submission for submission in submissions]
 
-    2. Otherwise, select the latest submission before 26/08 8am.
-    3. If no submission before 8am Monday, select the overall latest submission.
-    """
-
-    after_cutoff_submissions = [
-        submission
-        for submission in submissions
-    ]
-
-    before_cutoff_submissions = [
-        submission
-        for submission in submissions
-    ]
-
-    # 1. 
     if len(after_cutoff_submissions) > 10:
         return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
-
-    # 2.
-    if before_cutoff_submissions:
-        return max(
-            before_cutoff_submissions, key=lambda s: parse_iso_datetime(s["created_at"])
-        )
 
     # 3.
     return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
@@ -185,7 +173,7 @@ def main():
             else:
                 print("LATE - No valid submissions before cutoff datetime")
         else:
-            # student with staff email cant be found.
+            # student with staff email can't be found
             query = f"{first_name}%20{last_name}"
             missing_email_url = MISSING_EMAIL_URL_TEMPLATE.format(query=query)
             print(missing_email_url)
