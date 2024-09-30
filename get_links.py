@@ -9,18 +9,16 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-# Get API token
-# https://edstem.org/au/settings/api-tokens
 
+# Set API token in headers
 AUTH_HEADER = {
     "Authorization": f"Bearer {os.getenv('AUTH_TOKEN')}",
     "Content-Type": "application/json",
 }
 
+# Constants for API IDs and file paths
 API_ID = 134120
 SLIDE_ID = 414786
-
-
 STUDENTS_FILE = "students.txt"
 
 # Sample data:
@@ -48,7 +46,7 @@ MISSING_EMAIL_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/61238
 
 def read_student_data(file_path):
     """
-    Reads the students.txt file and extracts a list of student data.
+    Reads student data from a tab-separated file and returns a list of student dictionaries.
     """
     student_data = []
     try:
@@ -74,50 +72,44 @@ def read_student_data(file_path):
 
 def fetch_users():
     """
-    Fetches users from the API endpoint.
+    Fetches users from the Ed API.
     """
     response = requests.get(USERS_API_URL, headers=AUTH_HEADER)
     if response.status_code == 200:
         return response.json().get("users", [])
-    else:
-        print(
-            f"Failed to fetch users. Status code: {response.status_code}",
-            file=sys.stderr,
-        )
-        return []
+    print(
+        f"Failed to fetch users. Status code: {response.status_code}", file=sys.stderr
+    )
+    return []
 
 
 def fetch_submissions(student_id):
     """
-    Fetches submissions for a specific student ID.
+    Fetches submissions for a specific student ID from the Ed API.
     """
     url = SUBMISSIONS_API_URL_TEMPLATE.format(student_id=student_id)
     response = requests.get(url, headers=AUTH_HEADER)
     if response.status_code == 200:
         return response.json().get("submissions", [])
-    else:
-        print(
-            f"Failed to fetch submissions for student ID {student_id}. "
-            f"Status code: {response.status_code}",
-            file=sys.stderr,
-        )
-        return []
+    print(
+        f"Failed to fetch submissions for student ID {student_id}. "
+        f"Status code: {response.status_code}",
+        file=sys.stderr,
+    )
+    return []
 
 
 def parse_iso_datetime(iso_string):
     """
-    Converts an ISO 8601 datetime string to a datetime object in UTC timezone.
+    Converts an ISO 8601 datetime string to a datetime object in UTC.
     """
     return datetime.fromisoformat(iso_string.rstrip("Z")).replace(tzinfo=timezone.utc)
 
 
 def find_accepted_submission(submissions):
-
-    after_cutoff_submissions = [submission for submission in submissions]
-
-    if len(after_cutoff_submissions) > 10:
-        return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
-
+    """
+    Finds the latest valid submission.
+    """
     return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
 
 
@@ -157,7 +149,7 @@ def main():
             else:
                 print("LATE - No valid submissions before cutoff datetime")
         else:
-            # student with staff email can't be found
+            # Student with staff email not found
             query = f"{first_name}%20{last_name}"
             missing_email_url = MISSING_EMAIL_URL_TEMPLATE.format(query=query)
             print(missing_email_url)
