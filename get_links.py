@@ -17,28 +17,13 @@ AUTH_HEADER = {
     "Content-Type": "application/json",
 }
 
-
-# ED challange id used in api, slide id use in the url for the website
-
-# q1
 API_ID = 134120
 SLIDE_ID = 414786
 
-# # q2
-# API_ID = 134120
-# SLIDE_ID = 404316
-
-# # q3
-# API_ID = 134121
-# SLIDE_ID = 404317
-
-# # q4
-# API_ID = 134122
-# SLIDE_ID = 404318
-
 
 STUDENTS_FILE = "students.txt"
-# example data:
+
+# Sample data:
 """
 
 ZAKA	ABBASOV	-	ZABB0738@UNI.SYDNEY.EDU.AU
@@ -50,14 +35,14 @@ MOHAMMED	ALHUSSAIN	-	MALH0057@UNI.SYDNEY.EDU.AU
 """
 
 
-# Ed apt endpoints
+# Ed API endpoints
 USERS_API_URL = f"https://edstem.org/api/challenges/{API_ID}/users"
 SUBMISSIONS_API_URL_TEMPLATE = (
     f"https://edstem.org/api/users/{{student_id}}/challenges/{API_ID}/submissions"
 )
 SUBMISSION_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/61238/slides/{SLIDE_ID}/submissions?u={{student_id}}&s={{submission_id}}"
 
-# for student with staff email
+# Students with staff email
 MISSING_EMAIL_URL_TEMPLATE = f"https://edstem.org/au/courses/18651/lessons/61238/slides/{SLIDE_ID}/submissions?q={{query}}"
 
 
@@ -133,7 +118,6 @@ def find_accepted_submission(submissions):
     if len(after_cutoff_submissions) > 10:
         return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
 
-    # 3.
     return max(submissions, key=lambda s: parse_iso_datetime(s["created_at"]))
 
 
